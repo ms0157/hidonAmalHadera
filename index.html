@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חידון בינה מלאכותית</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Heebo', sans-serif;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'quiz-blue': '#4F46E5',
+                        'quiz-purple': '#6366F1',
+                        'quiz-green': '#10B981',
+                        'quiz-red': '#DC2626',
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-r from-blue-100 to-purple-100 flex justify-center items-center min-h-screen p-4">
+    <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl transition-transform hover:scale-105">
+        <h1 class="text-3xl font-semibold text-quiz-purple text-center mb-6">חידון על חודש הבינה המלאכותית</h1>
+        <div id="question-container" class="mb-6">
+            </div>
+        <div id="feedback" class="mt-6 p-4 rounded-md text-center font-medium hidden">
+            </div>
+        <div class="flex justify-center gap-4 mt-8">
+            <button id="next-question" class="bg-quiz-blue hover:bg-quiz-purple text-white font-semibold py-2.5 px-5 rounded-lg transition-colors duration-300 hidden">
+                השאלה הבאה
+            </button>
+            <button id="restart-quiz" class="bg-quiz-green hover:bg-green-600 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors duration-300 hidden">
+                התחל שוב
+            </button>
+        </div>
+        <div id="results-container" class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200 text-center hidden">
+            <h2 class="text-2xl font-semibold text-quiz-green mb-4">תוצאות החידון</h2>
+            <p><span id="final-score" class="text-xl font-bold text-quiz-blue">0</span> מתוך <span id="max-questions">0</span></p>
+            <p id="percentage" class="text-lg font-medium"></p>
+            <button onclick="window.location.href='index.html'" class="mt-6 bg-quiz-green hover:bg-green-600 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors duration-300">
+                לדף הראשי
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                question: "מהו הרעיון המרכזי של חודש הבינה המלאכותית?",
+                options: [
+                    "שילוב טכנולוגיה חדישה בחינוך",
+                    "היכרות עם רובוטיקה",
+                    "פיתוח מיומנויות תקשורת"
+                ],
+                correctAnswer: "שילוב טכנולוגיה חדישה בחינוך"
+            },
+            {
+                question: "איזה פרויקט מיוחד יצא לפועל במהלך החודש?",
+                options: [
+                    "יצירת עיתון שיתופי",
+                    "תחרות רובוטים",
+                    "סדנה להדפסה תלת-ממדית"
+                ],
+                correctAnswer: "יצירת עיתון שיתופי"
+            },
+            {
+                question: "מי היה אחראי להדרכת פיקוח תקשוב במחוז?",
+                options: [
+                    "מנהל בית הספר",
+                    "מדריך פיקוח תקשוב מחוזי",
+                    "תלמידים מתנדבים"
+                ],
+                correctAnswer: "מדריך פיקוח תקשוב מחוזי"
+            },
+            {
+                question: "מה היה הנושא המרכזי בעיתון השיתופי?",
+                options: [
+                    "פרויקטים טכנולוגיים",
+                    "איכות הסביבה",
+                    "אמנות ויצירה"
+                ],
+                correctAnswer: "פרויקטים טכנולוגיים"
+            },
+            {
+                question: "כיצד תרמה הבינה המלאכותית לשיפור התקשורת בבית הספר?",
+                options: [
+                    "יצירת קבוצות דיון מקוונות",
+                    "פיתוח אפליקציה פנימית",
+                    "ארגון סדנאות תקשורת"
+                ],
+                correctAnswer: "יצירת קבוצות דיון מקוונות"
+            },
+            {
+                question: "מהו היתרון העיקרי בשימוש בבינה מלאכותית בחינוך לפי החודש הזה?",
+                options: [
+                    "חיסכון בזמן",
+                    "פיתוח יצירתיות",
+                    "בניית מיומנויות טכנולוגיות"
+                ],
+                correctAnswer: "בניית מיומנויות טכנולוגיות"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = [];
+
+        const questionContainer = document.getElementById('question-container');
+        const feedback = document.getElementById('feedback');
+        const nextButton = document.getElementById('next-question');
+        const restartButton = document.getElementById('restart-quiz');
+        const resultsContainer = document.getElementById('results-container');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const maxQuestionsDisplay = document.getElementById('max-questions');
+        const percentageDisplay = document.getElementById('percentage');
+
+        function displayQuestion() {
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionContainer.innerHTML = `
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">${currentQuestion.question}</h2>
+                <div class="space-y-3">
+                    ${currentQuestion.options.map((option, index) => `
+                        <button class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2.5 px-5 rounded-lg w-full text-left transition-colors duration-300 flex items-center" data-option="${option}">
+                            <span class="mr-2"></span>${option}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            feedback.className = 'mt-6 p-4 rounded-md text-center font-medium hidden';
+            nextButton.classList.add('hidden');
+            restartButton.classList.add('hidden');
+            resultsContainer.classList.add('hidden');
+
+            const answerButtons = document.querySelectorAll('#question-container button');
+            answerButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const selectedAnswer = button.dataset.option;
+                    userAnswers[currentQuestionIndex] = selectedAnswer;
+                    checkAnswer(selectedAnswer);
+                });
+            });
+        }
+
+        function checkAnswer(selectedAnswer) {
+            const currentQuestion = quizData[currentQuestionIndex];
+            if (selectedAnswer === currentQuestion.correctAnswer) {
+                score++;
+                feedback.textContent = "תשובה נכונה! 🎉";
+                feedback.classList.remove('bg-red-100', 'text-red-700');
+                feedback.classList.add('bg-green-100', 'text-quiz-green');
+            } else {
+                feedback.textContent = "תשובה לא נכונה 😕";
+                feedback.classList.remove('bg-green-100', 'text-quiz-green');
+                feedback.classList.add('bg-red-100', 'text-red-700');
+            }
+            feedback.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+
+            const answerButtons = document.querySelectorAll('#question-container button');
+            answerButtons.forEach(button => {
+                button.disabled = true;
+                if (button.dataset.option === currentQuestion.correctAnswer) {
+                    button.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-700');
+                    button.classList.add('bg-green-100', 'text-quiz-green');
+                } else if (button.dataset.option === selectedAnswer) {
+                    button.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-700');
+                    button.classList.add('bg-red-100', 'text-red-700');
+                } else {
+                    button.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        }
+
+        function showNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                displayQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            questionContainer.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            restartButton.classList.remove('hidden');
+            resultsContainer.classList.remove('hidden');
+
+            finalScoreDisplay.textContent = score;
+            maxQuestionsDisplay.textContent = quizData.length;
+            const percentage = (score / quizData.length) * 100;
+            percentageDisplay.textContent = `הצלחת ב- ${percentage.toFixed(2)}%`;
+
+            if (percentage === 100) {
+                percentageDisplay.className = 'text-2xl font-bold text-quiz-green';
+                percentageDisplay.textContent = "כל הכבוד! ענית על הכל נכון! 🎉🎉🎉";
+            } else if (percentage >= 80) {
+                percentageDisplay.className = 'text-xl font-semibold text-quiz-green';
+                percentageDisplay.textContent = "מעולה! עברת את הרוב בהצלחה! 👍";
+            }
+             else if (percentage >= 60) {
+                percentageDisplay.className = 'text-xl font-semibold text-quiz-green';
+                percentageDisplay.textContent = "טוב מאוד! נסה שוב כדי להשתפר! 💪";
+            }
+            else {
+                percentageDisplay.className = 'text-xl font-semibold text-quiz-red';
+                percentageDisplay.textContent = "נסה שוב כדי להשתפר! 😕";
+            }
+        }
+
+        nextButton.addEventListener('click', showNextQuestion);
+        restartButton.addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers = [];
+            displayQuestion();
+        });
+
+        displayQuestion();
+    </script>
+</body>
+</html>
